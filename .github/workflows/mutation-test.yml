@@ -1,0 +1,48 @@
+name: Reusable Go mutation test
+
+on:
+  workflow_call:
+    inputs:
+      source:
+        description: Go source file relative to the caller repository
+        required: true
+        type: string
+      packages:
+        description: Go package pattern to test
+        default: ./...
+        required: false
+        type: string
+      timeout:
+        description: Timeout for each go test execution
+        default: 30s
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  mutation-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out caller repository
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Install mutcheck
+        run: go install github.com/aiden/mutcheck/cmd/mutcheck@v1
+      - name: Run mutation testing
+        env:
+          MUTCHECK_SOURCE: ${{ inputs.source }}
+          MUTCHECK_PACKAGES: ${{ inputs.packages }}
+          MUTCHECK_TIMEOUT: ${{ inputs.timeout }}
+        run: mutcheck run --source "$MUTCHECK_SOURCE" --packages "$MUTCHECK_PACKAGES" --timeout "$MUTCHECK_TIMEOUT" --report mutation-report.json
+      - name: Upload sanitized mutation report
+        if: always() && hashFiles('mutation-report.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: mutation-report.json
+          if-no-files-found: ignore
