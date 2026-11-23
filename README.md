@@ -28,6 +28,8 @@ mutcheck run --project C:\code\orders-service --source internal\pricing\discount
 
 `--source` must be a `.go` file inside the selected project. `--packages` is passed as one Go package pattern; it defaults to `./...`.
 
+The terminal report shows surviving mutations by default. Add `--verbose` to display every mutant and its outcome.
+
 ## Results
 
 Each candidate has one isolated temporary project copy. The original project is not edited. The tool checks that the unmodified baseline test suite passes before testing mutants.

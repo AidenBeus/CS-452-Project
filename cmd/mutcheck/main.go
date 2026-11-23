@@ -26,6 +26,7 @@ func main() {
 	packages := flags.String("packages", "./...", "package pattern passed to go test")
 	timeout := flags.Duration("timeout", 30*time.Second, "timeout for each go test invocation")
 	reportPath := flags.String("report", "", "optional path for a JSON report")
+	verbose := flags.Bool("verbose", false, "show every mutant instead of survivors only")
 	if err := flags.Parse(os.Args[2:]); err != nil {
 		os.Exit(2)
 	}
@@ -42,7 +43,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	report.PrintTerminal(os.Stdout, summary)
+	report.PrintTerminal(os.Stdout, summary, report.Options{Verbose: *verbose, Color: report.SupportsColor(os.Stdout)})
 	if *reportPath != "" {
 		if err := report.WriteJSON(*reportPath, summary); err != nil {
 			fmt.Fprintln(os.Stderr, "mutcheck: write report:", err)
