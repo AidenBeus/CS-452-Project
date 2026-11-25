@@ -14,8 +14,16 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 || os.Args[1] != "run" {
-		fmt.Fprintln(os.Stderr, "usage: mutcheck run --source <file.go> [--project <dir>] [--packages <pattern>] [--timeout <duration>] [--report <file>]")
+	if len(os.Args) < 2 {
+		printUsage()
+		os.Exit(2)
+	}
+	if os.Args[1] == "summary" {
+		runSummaryCommand(os.Args[2:])
+		return
+	}
+	if os.Args[1] != "run" {
+		printUsage()
 		os.Exit(2)
 	}
 
@@ -51,6 +59,30 @@ func main() {
 		}
 		fmt.Fprintln(os.Stdout, "JSON report:", *reportPath)
 	}
+}
+
+func runSummaryCommand(arguments []string) {
+	flags := flag.NewFlagSet("summary", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+	reportPath := flags.String("report", "", "path to a mutcheck JSON report (required)")
+	if err := flags.Parse(arguments); err != nil {
+		os.Exit(2)
+	}
+	if *reportPath == "" {
+		fmt.Fprintln(os.Stderr, "mutcheck: --report is required")
+		os.Exit(2)
+	}
+	summary, err := report.ReadJSON(*reportPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "mutcheck: read report:", err)
+		os.Exit(1)
+	}
+	report.WriteGitHubSummary(os.Stdout, summary)
+}
+
+func printUsage() {
+	fmt.Fprintln(os.Stderr, "usage: mutcheck run --source <file.go> [--project <dir>] [--packages <pattern>] [--timeout <duration>] [--report <file>] [--verbose]")
+	fmt.Fprintln(os.Stderr, "       mutcheck summary --report <mutation-report.json>")
 }
 
 func buildConfig(project, source, packages string, timeout time.Duration) (app.Config, error) {

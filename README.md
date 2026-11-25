@@ -28,7 +28,7 @@ mutcheck run --project C:\code\orders-service --source internal\pricing\discount
 
 `--source` must be a `.go` file inside the selected project. `--packages` is passed as one Go package pattern; it defaults to `./...`.
 
-The terminal report shows surviving mutations by default. Add `--verbose` to display every mutant and its outcome.
+The terminal report shows surviving mutations by default, including the affected source line and its single-change replacement. Add `--verbose` to display every mutant and its outcome. Source context is intentionally excluded from JSON reports.
 
 ## Results
 
@@ -71,4 +71,4 @@ jobs:
       timeout: 30s
 ```
 
-The workflow checks out the caller repository, installs the versioned CLI, and uploads a sanitized JSON report. It uses read-only repository permissions and accepts no secrets.
+The workflow checks out the caller repository, installs the versioned CLI, writes a compact mutation summary to the GitHub Actions run page, and uploads a sanitized JSON report. The job summary includes counts and up to ten surviving mutations; it never includes source context or raw test output. It uses read-only repository permissions and accepts no secrets.

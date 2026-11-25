@@ -39,6 +39,9 @@ jobs:
           MUTCHECK_PACKAGES: ${{ inputs.packages }}
           MUTCHECK_TIMEOUT: ${{ inputs.timeout }}
         run: mutcheck run --source "$MUTCHECK_SOURCE" --packages "$MUTCHECK_PACKAGES" --timeout "$MUTCHECK_TIMEOUT" --report mutation-report.json
+      - name: Add mutation results to job summary
+        if: always() && hashFiles('mutation-report.json') != ''
+        run: mutcheck summary --report mutation-report.json >> "$GITHUB_STEP_SUMMARY"
       - name: Upload sanitized mutation report
         if: always() && hashFiles('mutation-report.json') != ''
         uses: actions/upload-artifact@v4

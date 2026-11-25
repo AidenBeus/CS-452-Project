@@ -9,6 +9,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/aiden/mutcheck/internal/domain"
 )
@@ -26,6 +27,7 @@ func Discover(sourcePath string) ([]domain.Mutant, error) {
 	}
 
 	mutants := make([]domain.Mutant, 0)
+	lines := strings.Split(string(source), "\n")
 	index := 0
 	ast.Inspect(file, func(node ast.Node) bool {
 		original, replacement, operator, ok := mutationFor(node)
@@ -33,7 +35,8 @@ func Discover(sourcePath string) ([]domain.Mutant, error) {
 			return true
 		}
 		index++
-		position := fileSet.Position(node.Pos())
+		position := fileSet.Position(mutationPosition(node))
+		sourceLine, mutatedLine := mutationLines(lines, position.Line, position.Column, original, replacement)
 		mutants = append(mutants, domain.Mutant{
 			ID:             fmt.Sprintf("M%03d", index),
 			CandidateIndex: index,
@@ -43,10 +46,35 @@ func Discover(sourcePath string) ([]domain.Mutant, error) {
 			Operator:       operator,
 			Original:       original,
 			Replacement:    replacement,
+			SourceLine:     sourceLine,
+			MutatedLine:    mutatedLine,
 		})
 		return true
 	})
 	return mutants, nil
+}
+
+func mutationPosition(node ast.Node) token.Pos {
+	switch expression := node.(type) {
+	case *ast.BinaryExpr:
+		return expression.OpPos
+	case *ast.Ident:
+		return expression.NamePos
+	default:
+		return node.Pos()
+	}
+}
+
+func mutationLines(lines []string, line, column int, original, replacement string) (string, string) {
+	if line < 1 || line > len(lines) || column < 1 {
+		return "", ""
+	}
+	sourceLine := lines[line-1]
+	offset := column - 1
+	if offset+len(original) > len(sourceLine) || sourceLine[offset:offset+len(original)] != original {
+		return sourceLine, ""
+	}
+	return sourceLine, sourceLine[:offset] + replacement + sourceLine[offset+len(original):]
 }
 
 // Apply recreates the source AST, changes the selected candidate, and formats valid Go source.

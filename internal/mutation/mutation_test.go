@@ -38,6 +38,9 @@ func TestDiscoverFindsEachSupportedOperator(t *testing.T) {
 	if mutants[0].Original != ">" || mutants[0].Replacement != ">=" {
 		t.Fatalf("first mutant = %#v; want > to >=", mutants[0])
 	}
+	if mutants[0].SourceLine != "\t_ = a > b" || mutants[0].MutatedLine != "\t_ = a >= b" {
+		t.Fatalf("first mutant source context = %#v", mutants[0])
+	}
 	if mutants[11].Original != "true" || mutants[11].Replacement != "false" {
 		t.Fatalf("true mutant = %#v", mutants[11])
 	}

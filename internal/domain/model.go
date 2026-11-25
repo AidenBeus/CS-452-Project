@@ -23,6 +23,10 @@ type Mutant struct {
 	Operator       string `json:"operator"`
 	Original       string `json:"original"`
 	Replacement    string `json:"replacement"`
+	// SourceLine and MutatedLine are terminal-only context. They are excluded from
+	// JSON reports so reports do not include target-project source code.
+	SourceLine  string `json:"-"`
+	MutatedLine string `json:"-"`
 }
 
 type Result struct {
